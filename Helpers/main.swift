@@ -2,6 +2,8 @@
 import Foundation
 import Security
 import Darwin
+import IOKit
+import IOKit.hid
 
 struct CaptureFailure: LocalizedError {
     let text: String
@@ -12,6 +14,44 @@ let rootDirectory = "/private/tmp/com.miremote.mapper.capture"
 let backupURL = URL(fileURLWithPath: rootDirectory).appendingPathComponent("original.plist")
 var ownsSessionLock = false
 var snapshotToRemove: URL?
+
+// macOS 26 起普通应用独占 HID 被拒（kIOReturnNotPermitted），root 可独占（实测 26.6）。
+// 接收会话期间由本助手独占 Google 遥控器 HID，阻止原生动作与映射双发；进程退出即自动解除。
+var hidSeizeManager: IOHIDManager?
+var seizedHIDs: [IOHIDDevice] = []
+
+func releaseHIDSeize() {
+    for device in seizedHIDs { _ = IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeSeizeDevice)) }
+    seizedHIDs.removeAll()
+}
+
+func seizeDevice(_ device: IOHIDDevice) -> Bool {
+    guard seizedHIDs.contains(where: { $0 == device }) == false else { return true }
+    let pid = (IOHIDDeviceGetProperty(device, kIOHIDProductIDKey as CFString) as? Int) ?? -1
+    guard pid == 0x9450 else { return false }
+    guard IOHIDDeviceOpen(device, IOOptionBits(0)) == kIOReturnSuccess else { return false }
+    _ = IOHIDDeviceClose(device, IOOptionBits(0))
+    let seized = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeSeizeDevice)) == kIOReturnSuccess
+    if seized { seizedHIDs.append(device) } else { _ = IOHIDDeviceOpen(device, IOOptionBits(0)) }
+    return seized
+}
+
+// 返回初次枚举独占成功的设备数；BLE 唤醒重连后的新设备实例由 matching 回调补独占。
+func startHIDSeize() -> Int {
+    let mgr = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(0))
+    IOHIDManagerSetDeviceMatching(mgr, [kIOHIDVendorIDKey as String: 0x18D1] as CFDictionary)
+    IOHIDManagerScheduleWithRunLoop(mgr, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
+    IOHIDManagerRegisterDeviceMatchingCallback(mgr, { _, _, _, dvc in
+        if seizeDevice(dvc), !seizedHIDs.isEmpty {
+            emit(GoogleCaptureRecord(kind: "seized", message: "\(seizedHIDs.count)"))
+        }
+    }, nil)
+    if let set = IOHIDManagerCopyDevices(mgr) as? Set<IOHIDDevice> {
+        for dvc in set { _ = seizeDevice(dvc) }
+    }
+    hidSeizeManager = mgr
+    return seizedHIDs.count
+}
 
 func execute(_ path: String, _ arguments: [String], input: Data? = nil) throws -> (Int32, Data) {
     let process = Process(); process.executableURL = URL(fileURLWithPath: path); process.arguments = arguments
@@ -80,9 +120,11 @@ do {
     }
     let cli = URL(fileURLWithPath: CommandLine.arguments[1]).resolvingSymlinksInPath()
     let output = URL(fileURLWithPath: CommandLine.arguments[2])
+    // 逗号分隔的候选输入报告 handle（"46,2B"）：两种已实测的 G9N9N 报告布局。
+    let attributes = CommandLine.arguments[5].split(separator: ",").compactMap { UInt16($0, radix: 16) }.filter { $0 > 0 }
     guard let parent = Int32(CommandLine.arguments[3]), parent > 1,
           let identifier = UUID(uuidString: CommandLine.arguments[4]),
-          let attribute = UInt16(CommandLine.arguments[5], radix: 16), attribute > 0 else {
+          !attributes.isEmpty else {
         throw CaptureFailure(text: "会话参数无效")
     }
     // Root only opens an existing, single-link, private regular file owned by the App user.
@@ -151,12 +193,20 @@ do {
     try writeDomain(GoogleTraceSettings.enabled(original))
     reloadLogging()
 
+    // macOS 26+: 普通应用独占 HID 被系统拒绝，改由本 root 助手在会话内独占（详见 startHIDSeize 注释）。
+    let seizedCount = startHIDSeize()
+    if seizedCount > 0 {
+        emit(GoogleCaptureRecord(kind: "seized", message: "\(seizedCount)"))
+    } else {
+        emit(GoogleCaptureRecord(kind: "seize-failed", message: "无法独占 Google 遥控器 HID，映射已暂停；请重开按键接收"))
+    }
+
     var process: Process?
     var outputPipe: Pipe?
     var errorPipe: Pipe?
     var generation = 0
     let queue = DispatchQueue(label: "com.miremote.capture.session")
-    var decoder = GooglePacketDecoder(peripheralID: identifier.uuidString, attribute: attribute)
+    var decoder = GooglePacketDecoder(peripheralID: identifier.uuidString, attributes: attributes)
     var buffered = Data(); var finished = false; var sourceReady = false
     var errorText = ""
     var recovery = GoogleCaptureRecovery()
@@ -177,6 +227,7 @@ do {
     func finish(_ reason: String, failed: Bool = false) {
         guard !finished else { return }; finished = true
         stopChild()
+        releaseHIDSeize()
         emit(GoogleCaptureRecord(kind: "disconnected", message: reason))
         do {
             try restoreSettings()
@@ -199,7 +250,7 @@ do {
         stopChild()
         let current = generation
         buffered.removeAll(); errorText = ""
-        decoder = GooglePacketDecoder(peripheralID: identifier.uuidString, attribute: attribute)
+        decoder = GooglePacketDecoder(peripheralID: identifier.uuidString, attributes: attributes)
         let child = Process(); child.executableURL = privateCLI
         child.arguments = ["convert", "-s", "-f", "ipnhdsr"]
         let out = Pipe(); let err = Pipe()
@@ -264,6 +315,7 @@ do {
     // Startup failures after backup creation must restore too, while holding the session lock.
     // Errors before owning the lock must never restore another live session.
     var message = error.localizedDescription
+    releaseHIDSeize()
     if ownsSessionLock {
         do { try restoreSettings() }
         catch { message += "；恢复失败：\(error.localizedDescription)；请重新开启接收器以恢复原设置" }

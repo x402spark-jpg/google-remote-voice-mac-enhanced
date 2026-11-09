@@ -13,7 +13,7 @@ import Foundation
         func notify(_ payload: String, name: String = "Chromecast Remote", handle: String = "0x0041", attribute: String = "0x0046") -> String {
             "2026-10-31T17:00:01  ATT Receive      \(name)  \(handle)  RECV  Handle Value Notification - Handle:\(attribute) - Value: \(payload)  41 20 08 00 04 00 04 00 1B 46 00 03"
         }
-        var decoder = GooglePacketDecoder(peripheralID: uuid, attribute: 0x46)
+        var decoder = GooglePacketDecoder(peripheralID: uuid, attributes: [0x46])
         check(decoder.feed(notify("03")) == nil, "ignore notifications before identity binding")
         check(decoder.feed(connected)?.kind == "connected", "bind selected peripheral")
         for button in 1...17 {
@@ -28,13 +28,35 @@ import Foundation
         check(decoder.feed(notify("03", name:"Other keyboard")) == nil, "filter unrelated device")
         check(decoder.feed(notify("03", handle:"0x0042")) == nil, "filter other connection")
         check(decoder.feed(notify("03", attribute:"0x0028")) == nil, "filter battery/other characteristic")
-        var other = GooglePacketDecoder(peripheralID: "FFFFFFFF-BBBB-CCCC-DDDD-EEEEEEEEEEEE", attribute: 0x46)
+        var other = GooglePacketDecoder(peripheralID: "FFFFFFFF-BBBB-CCCC-DDDD-EEEEEEEEEEEE", attributes: [0x46])
         check(other.feed(connected) == nil, "filter same-name peripheral with wrong UUID")
         check(other.feed(notify("03")) == nil, "wrong peripheral cannot bind")
         check(decoder.feed("2026-10-31T17:00:02  HCI Event  Chromecast Remote  0x0041  RECV  Disconnection Complete")?.kind == "disconnected", "disconnect event")
         check(decoder.feed(notify("03")) == nil, "ignore after disconnect until identity rebound")
         check(decoder.feed(connected.replacingOccurrences(of:"0x0041",with:"0x0042"))?.kind == "connected", "bind new connection handle")
         check(decoder.feed(notify("03",handle:"0x0042"))?.buttons == [3], "receive on new connection")
+
+        // 0x002B 布局：16 位小端 Consumer usage（另一批次样机实测值）
+        var gdecoder = GooglePacketDecoder(peripheralID: uuid, attributes: [0x46, 0x2B])
+        check(gdecoder.feed(notify("4100", attribute:"0x002B")) == nil, "consumer layout ignored before identity binding")
+        check(gdecoder.feed(connected)?.kind == "connected", "consumer layout binds")
+        let consumerCases: [(String, [Int]?)] = [
+            ("4100", [7]), ("4200", [3]), ("4300", [4]), ("4400", [5]), ("4500", [6]),
+            ("2302", [10]), ("2402", [11]), ("E200", [8]), ("E900", [12]), ("EA00", [13]),
+            ("7700", [14]), ("7800", [15]), ("9E01", [1]), ("8901", [17]), ("CD00", [2]),
+            ("2102", [9]), ("7900", [16]),
+            ("43 00", [4]), ("41004200", [3, 7]), ("0000", []),
+        ]
+        for (payload, expected) in consumerCases {
+            check(gdecoder.feed(notify(payload, attribute:"0x002B"))?.buttons == expected, "consumer decode \(payload)")
+        }
+        for value in ["05", "4100 00", "9999", "41"] {
+            check(gdecoder.feed(notify(value, attribute:"0x002B")) == nil, "reject malformed consumer \(value)")
+        }
+        check(gdecoder.feed(notify("03", attribute:"0x0046"))?.buttons == [3], "index layout still decodes")
+        check(gdecoder.feed(notify("03", attribute:"0x0028")) == nil, "filter unlisted characteristic")
+        check(gdecoder.feed("2026-10-31T17:00:03  HCI Event  Chromecast Remote  0x0041  RECV  Disconnection Complete")?.kind == "disconnected", "consumer layout disconnect")
+        check(gdecoder.feed(notify("0000", attribute:"0x002B")) == nil, "consumer ignored until rebound")
 
         var recovery = GoogleCaptureRecovery()
         check(!recovery.shouldRefresh(bound: false, now: 4), "wait before refreshing an unbound snapshot")

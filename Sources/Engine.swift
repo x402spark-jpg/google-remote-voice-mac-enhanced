@@ -51,7 +51,7 @@ final class Engine: ObservableObject {
     @Published var googleButtonCounts: [Int: Int] = [:]
     @Published private(set) var googleInputIssue = ""
     private var googleHIDDevices: [Int: IOHIDDevice] = [:]
-    private var googleSeized: Set<Int> = []
+    private var helperSeize = false   // root 采集助手已独占原生 HID（macOS 26+ 普通应用无法独占）
     private var capturePeripheralID: String?
     private var googleState = GoogleButtonState()
     private var googleTargets: [Int: ButtonMapping] = [:]
@@ -547,7 +547,15 @@ final class Engine: ObservableObject {
         case "buttons":
             lastGooglePacketAt = ProcessInfo.processInfo.systemUptime
             for edge in googleState.update(record.buttons) { googleEdge(edge) }
+        case "seized":
+            helperSeize = true
+            googleInputIssue = ""
+        case "seize-failed":
+            helperSeize = false
+            googleInputIssue = record.message
         case "connected", "disconnected", "stopped", "error":
+            // connected 只是刷新连接绑定：seize 由助手持有，跨连接持续有效，这里不能清除。
+            if record.kind != "connected" { helperSeize = false }
             releaseGoogleButtons()
             if !record.message.isEmpty { L(record.message) }
         case "ready": L(record.message)
@@ -564,7 +572,7 @@ final class Engine: ObservableObject {
             let mapping = config.buttons.first(where: { $0.usage == edge.button })
             lastButton = mapping?.name ?? "Google \(edge.button)"
             L("Google [\(lastButton)] 按下\(googleTestMode ? "（检测）" : " → \(mapping?.display ?? "未配置")")")
-            guard !googleTestMode, capturingUsage == nil, axTrusted, !googleSeized.isEmpty,
+            guard !googleTestMode, capturingUsage == nil, axTrusted, helperSeize,
                   let mapping, mapping.keycode != KeyNames.kNone else { return }
             let alreadyDown = googleTargets.values.contains(where: { $0.actionID == mapping.actionID })
             googleTargets[edge.button] = mapping
@@ -645,28 +653,12 @@ final class Engine: ObservableObject {
     private var openedHIDs: Set<Int> = []   // 已注册报告回调的设备 UniqueID（可达 UInt32 上限以上，用 Int）
 
     private func syncGoogleHIDAccess() {
+        // macOS 26 起 kIOHIDOptionsTypeSeizeDevice 对普通应用返回 kIOReturnNotPermitted（实测 26.6，root 可独占），
+        // 独占改由 root 采集助手在接收会话内执行并经 "seized" 事件同步；这里只维护暂停/释放语义。
         let exclusive = GoogleCapturePolicy.shouldSeize(active: googleCapture.active,
             deviceCount: googleHIDDevices.count, connected: remoteConnected && isGoogleRemote,
             currentID: dev?.identifier.uuidString, sessionID: capturePeripheralID)
         if !exclusive { releaseGoogleButtons() }
-        for (id, device) in googleHIDDevices {
-            if exclusive && !googleSeized.contains(id) {
-                IOHIDDeviceClose(device, 0)
-                let result = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeSeizeDevice))
-                if result == kIOReturnSuccess {
-                    googleSeized.insert(id); googleInputIssue = ""
-                    L("Google 原生按键已独占接收，避免系统动作与映射双发")
-                } else {
-                    _ = IOHIDDeviceOpen(device, 0)
-                    googleInputIssue = "无法取得独占输入（\(result)），映射已暂停；请检查输入监控权限或其他遥控器软件"
-                    releaseGoogleButtons()
-                }
-            } else if !exclusive && googleSeized.contains(id) {
-                IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeSeizeDevice))
-                _ = IOHIDDeviceOpen(device, 0); googleSeized.remove(id)
-                L("Google 原生按键接收已释放")
-            }
-        }
         if googleCapture.active && googleHIDDevices.count != 1 {
             googleInputIssue = "遥控器未就绪或连接了多支同款设备，映射已暂停"
         }
@@ -691,7 +683,7 @@ final class Engine: ObservableObject {
             let id = (IOHIDDeviceGetProperty(device, kIOHIDUniqueIDKey as CFString) as? NSNumber)?.intValue ?? -1
             MainActor.assumeIsolated {
                 if me.googleHIDDevices.removeValue(forKey: id) != nil {
-                    me.googleSeized.remove(id); me.releaseGoogleButtons()
+                    me.releaseGoogleButtons()
                     me.googleInputIssue = "遥控器已断开，等待唤醒重连"
                 }
                 me.openedHIDs.remove(id)

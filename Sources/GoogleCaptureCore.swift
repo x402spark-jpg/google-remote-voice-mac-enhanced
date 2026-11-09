@@ -8,12 +8,21 @@ struct GoogleCaptureRecord: Codable, Equatable {
 
 struct GooglePacketDecoder {
     let peripheralID: String
-    let attribute: UInt16
+    // 两台实测样机的输入报告布局，按键特征 handle → 解码规则一一对应：
+    // 0x0046：8 位 Consumer 数组索引（样机固件 26.7）；0x002B：16 位小端 Consumer usage（另一批次，固件 0.0.1）。
+    // 新批次/重新配对后布局可能再变，需按 docs/PROTOCOL.md 复验后再扩充。
+    let attributes: [UInt16]
     private var connection: UInt16?
     var isBound: Bool { connection != nil }
-    init(peripheralID: String, attribute: UInt16) {
-        self.peripheralID = peripheralID.uppercased(); self.attribute = attribute
+    init(peripheralID: String, attributes: [UInt16]) {
+        self.peripheralID = peripheralID.uppercased(); self.attributes = attributes
     }
+    // 索引 → Consumer usage 对照（与 Model.swift GVRMap 注释同源；0x002B 布局已在实机验证 14 键）。
+    private static let consumerToUsage: [UInt16: Int] = [
+        0x019E: 1, 0x00CD: 2, 0x0042: 3, 0x0043: 4, 0x0044: 5, 0x0045: 6, 0x0041: 7,
+        0x00E2: 8, 0x0221: 9, 0x0223: 10, 0x0224: 11, 0x00E9: 12, 0x00EA: 13,
+        0x0077: 14, 0x0078: 15, 0x0079: 16, 0x0189: 17,
+    ]
     private static let row = try! NSRegularExpression(pattern:
         #"^\S+\s{2,}(Config|ATT Receive|HCI Event)\s{2,}Chromecast Remote\s{2,}(0x[0-9a-fA-F]+)\s{2,}RECV\s{2,}(.*)$"#)
     private static let notification = try! NSRegularExpression(pattern:
@@ -38,8 +47,16 @@ struct GooglePacketDecoder {
         guard kind == "ATT Receive",
               let match = Self.notification.firstMatch(in: body, range: NSRange(body.startIndex..., in: body)) else { return nil }
         let description = body as NSString
-        guard UInt16(description.substring(with: match.range(at: 1)).dropFirst(2), radix: 16) == attribute else { return nil }
+        guard let attribute = UInt16(description.substring(with: match.range(at: 1)).dropFirst(2), radix: 16),
+              attributes.contains(attribute) else { return nil }
         let hex = description.substring(with: match.range(at: 2)).replacingOccurrences(of: " ", with: "")
+        if attribute == 0x46 {
+            return decodeIndexArray(hex)
+        }
+        return decodeConsumerCodes(hex)
+    }
+    // 0x0046：每字节一个按键索引（1-17），0=松开；兼容 1-2 字节（单键/和弦）。
+    private func decodeIndexArray(_ hex: String) -> GoogleCaptureRecord? {
         guard hex.count == 2 || hex.count == 4 else { return nil }
         var payload: [Int] = []
         var index = hex.startIndex
@@ -49,6 +66,27 @@ struct GooglePacketDecoder {
             payload.append(value); index = next
         }
         return GoogleCaptureRecord(kind: "buttons", buttons: Set(payload).subtracting([0]).sorted())
+    }
+    // 0x002B：每 2 字节一个 16 位小端 Consumer usage，0=松开；兼容 1-2 个 usage 的单键/和弦。
+    private func decodeConsumerCodes(_ hex: String) -> GoogleCaptureRecord? {
+        guard hex.count == 4 || hex.count == 8, let bytes = Self.parseBytes(hex) else { return nil }
+        var payload: [Int] = []
+        for offset in stride(from: 0, to: bytes.count, by: 2) {
+            let code = bytes[offset] | (UInt16(bytes[offset + 1]) << 8)
+            guard code == 0 || Self.consumerToUsage[code] != nil else { return nil }
+            if let usage = Self.consumerToUsage[code] { payload.append(usage) }
+        }
+        return GoogleCaptureRecord(kind: "buttons", buttons: Set(payload).sorted())
+    }
+    private static func parseBytes(_ hex: String) -> [UInt16]? {
+        var bytes: [UInt16] = []
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2)
+            guard let value = UInt16(hex[index..<next], radix: 16) else { return nil }
+            bytes.append(value); index = next
+        }
+        return bytes
     }
 }
 

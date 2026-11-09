@@ -56,7 +56,8 @@ import UniformTypeIdentifiers
             let output = directory.appendingPathComponent("events.jsonl")
             guard FileManager.default.createFile(atPath: output.path, contents: nil, attributes: [.posixPermissions: 0o600]) else { throw CocoaError(.fileWriteUnknown) }
             self.directory = directory; reader = try FileHandle(forReadingFrom: output)
-            let command = [helper.path, cli.path, output.path, String(ProcessInfo.processInfo.processIdentifier), peripheralID, "46"].map(Self.quote).joined(separator: " ")
+            // "46,2B"：两种已实测的 G9N9N 输入报告布局（见 GooglePacketDecoder 注释）。
+            let command = [helper.path, cli.path, output.path, String(ProcessInfo.processInfo.processIdentifier), peripheralID, "46,2B"].map(Self.quote).joined(separator: " ")
             let appleString = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
             let process = Process(); process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
             process.arguments = ["-e", "do shell script \"exec \(appleString)\" with administrator privileges"]
@@ -115,6 +116,8 @@ import UniformTypeIdentifiers
                 case "ready": ready = !stopping; status = stopping ? "正在恢复设置…" : record.message
                 case "starting": status = "正在连接实时按键接收…"
                 case "connected": if !stopping { status = "已绑定遥控器，等待按键" }
+                case "seized": if !stopping { status = "已独占原生按键，映射生效" }
+                case "seize-failed": if !stopping { status = "HID 独占失败，映射暂停" }
                 case "disconnected":
                     ready = false
                     if !stopping { status = record.message.isEmpty ? "遥控器已断开，等待自动重连…" : record.message }
