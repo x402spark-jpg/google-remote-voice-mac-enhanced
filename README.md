@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zolo1978/google-remote-voice-mac/actions/workflows/ci.yml"><img src="https://github.com/zolo1978/google-remote-voice-mac/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/x402spark-jpg/google-remote-voice-mac-enhanced/actions/workflows/ci.yml"><img src="https://github.com/x402spark-jpg/google-remote-voice-mac-enhanced/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-333C38?logo=apple&amp;logoColor=white" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Apple_Silicon-supported-DBEDE4?labelColor=333C38&amp;color=DBEDE4" alt="Apple Silicon">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-DBEDE4?labelColor=333C38" alt="MIT License"></a>
@@ -26,7 +26,7 @@
   <a href="#默认按键">按键玩法</a> &nbsp; / &nbsp;
   <a href="#兼容性">支持设备</a> &nbsp; / &nbsp;
   <a href="docs/TROUBLESHOOTING.md">遇到问题</a> &nbsp; / &nbsp;
-  <a href="https://github.com/zolo1978/google-remote-voice-mac/issues">反馈建议</a>
+  <a href="https://github.com/x402spark-jpg/google-remote-voice-mac-enhanced/issues">反馈建议</a>
 </p>
 
 <br>
@@ -79,7 +79,7 @@ Handy 是独立的免费开源语音转文字工具，支持本地离线识别�
 ## 快速开始
 
 ```sh
-git clone https://github.com/zolo1978/google-remote-voice-mac.git
+git clone https://github.com/x402spark-jpg/google-remote-voice-mac-enhanced.git
 cd google-remote-voice-mac
 ./install.sh
 ```
