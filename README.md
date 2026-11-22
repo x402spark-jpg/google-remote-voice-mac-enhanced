@@ -31,6 +31,15 @@
 
 <br>
 
+> **🔧 增强版（本仓库）**：在上游基础上验证并打通了 **`0x011B` / 固件 0.0.1 批次**遥控器在 **macOS 26.5.1** 上的完整链路（语音 + 14 键全部可用），并提供**一体安装包**：
+>
+> - **自带 USB-transport 虚拟麦克风**（Remote Buddy Mic，豆包输入法可直接识别）——无需另装 BlackHole、无需重启电脑。
+> - **真实修饰键快捷键合成**——豆包等输入法的「按住说话」组合键（如左⌘+左⇧）能被正确触发（仅给主键挂 flags 的旧做法不触发）。
+> - **输出设备可配置**（`config.json` 的 `outputDeviceName`，默认 Remote Buddy Mic，可改 BlackHole）。
+> - 一个 `.pkg` 装好 App + 驱动；**PacketLogger 因 Apple 许可须自行下载**（安装向导引导），权限/管理员授权按系统弹窗确认。
+>
+> **一体安装**：从 [Releases](../../releases) 下载 `GoogleRemoteVoice-Enhanced-*.pkg` 双击安装，再照 [一体安装指南](docs/ALLINONE.md) 与 [豆包配置](docs/DOUBAO.md) 设置。源码构建见[快速开始](#快速开始)。
+
 <table>
 <tr>
 <td width="33%" valign="top">

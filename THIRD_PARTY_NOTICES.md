@@ -16,10 +16,11 @@ MIT。保留原仓库提交历史、原始版权以及 LICENSE。菜单栏应用
 
 这些项目是研究来源，不表示它们为本项目背书，也不改变各自许可证。协议 UUID、按键 usage 和线格式属于互操作事实；不捆绑这些项目的应用、驱动或二进制。
 
-## 单独安装的依赖
+## 捆绑与单独安装的依赖
 
-- **BlackHole**：https://github.com/ExistentialAudio/BlackHole ，GPL-3.0。作为用户单独安装的系统音频驱动使用；本仓库不打包其驱动或源代码。
-- **Apple PacketLogger**：https://developer.apple.com/bluetooth/ ，Apple 工具，遵守其下载与使用条款。本仓库/源码发行不打包、转售或重新发布 PacketLogger、Additional Tools、Apple 诊断描述文件。
-- **Handy**：https://github.com/cjpais/Handy ，可选外部语音识别工具，独立安装并遵守其许可证。本应用没有捆绑它或任何语音模型。
+- **RemoteBuddyMic.driver（一体包捆绑）**：GPL-3.0-only。BlackHole v0.7.2（修订 561d934）的 USB-transport 派生驱动，来自 https://github.com/zfdang/remote-buddy 。一体安装包随附该驱动对象代码、GPL 许可证（`LICENSES/BlackHole-GPL-3.0.txt`）、修改声明（`Packaging/Vendor/NOTICE.txt`）与对应源码信息（`Packaging/Vendor/SOURCE.md`）。源码构建用户也可改用官方 BlackHole。
+- **BlackHole**：https://github.com/ExistentialAudio/BlackHole ，GPL-3.0。上述捆绑驱动的上游；单独安装时作为系统音频驱动使用。
+- **Apple PacketLogger**：https://developer.apple.com/bluetooth/ ，Apple 工具，遵守其下载与使用条款。**本仓库/安装包不打包、转售或重新发布 PacketLogger、Additional Tools、Apple 诊断描述文件**；用户须自行从 Apple 官方下载（需 Apple 账号），安装包仅检测并引导。
+- **Handy / 豆包输入法 / Typeless 等**：可选外部语音识别/输入工具，独立安装并遵守各自许可证。本应用不捆绑它们或任何语音模型。
 
 Google、Chromecast、Apple 等商标属于相应权利人；本项目是独立社区项目。

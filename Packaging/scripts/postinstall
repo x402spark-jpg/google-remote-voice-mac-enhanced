@@ -1,0 +1,9 @@
+#!/bin/sh
+# postinstall — runs as root after the payload is placed.
+# The payload installs:
+#   /Applications/Google Remote Voice.app
+#   /Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver
+# Restart CoreAudio so the new HAL driver is loaded. This briefly interrupts
+# system audio (a few seconds) and auto-recovers; the welcome screen warns about it.
+killall coreaudiod 2>/dev/null || true
+exit 0

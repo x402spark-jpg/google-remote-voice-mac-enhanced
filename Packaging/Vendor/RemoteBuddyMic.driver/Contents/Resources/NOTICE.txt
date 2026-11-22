@@ -1,0 +1,14 @@
+RemoteBuddyMic.driver
+Copyright (C) 2019 Existential Audio Inc.
+Modified for Remote Buddy by Remote Buddy contributors (2026).
+
+Modification Notice (GNU General Public License v3.0, Section 5(a)):
+This HAL audio driver is a modified version of Existential Audio BlackHole v0.7.2
+(upstream revision 561d934c77a1fa64987e01ccabe890fed30e181f), patched with
+third_party/blackhole/device-usb.patch and compiled with Remote Buddy's bundle
+identifier (com.zfdang.remote-buddy.mic), fixed UID (BuddyMic2ch_UID), and product
+branding.
+
+License: GNU General Public License v3.0 only (GPL-3.0-only).
+Complete corresponding source code is published alongside releases at:
+https://github.com/zfdang/remote-buddy

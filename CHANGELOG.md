@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Enhanced（本仓库增强）
+
+- 输出设备可配置：`Config.outputDeviceName`（默认 Remote Buddy Mic）替换四处硬编码设备查找（含 2 秒 watchdog），语音可灌入豆包能识别的 USB-transport 回环设备，无需安装 BlackHole 或重启。
+- `postKey` 改为真实按下左修饰键 keyDown/keyUp 序列（含纯修饰键组合如左⌘+左⇧），修复豆包等输入法「按住说话」组合键不触发（仅给主键挂 flags 无效）。
+- 一体安装包 `Packaging/build-pkg.sh`：打包 App + 捆绑 `RemoteBuddyMic.driver`（GPL-3.0-only，附许可证/修改声明/对应源码信息）+ postinstall 重启 CoreAudio；安装向导引导 PacketLogger 下载与权限授权。
+- 实测打通 `0x011B`/固件 0.0.1 批次在 macOS 26.5.1 的语音 + 14 键全链路（root 独占成功、14/14 按键捕获、豆包出字）。
+- 新增 `docs/ALLINONE.md`、`docs/DOUBAO.md`。
+
+### 上游
+
 - 支持第二批次遥控器（固件 0.0.1）的按键报告布局：输入特征 `0x002B`、16 位小端 Consumer usage；解码按 handle 区分两种已验证布局，保留 `0x0046` 旧布局与全部旧测试。
 - macOS 26+ 普通应用独占 HID 被系统拒绝（kIOReturnNotPermitted，实测 26.6）：独占改由 root 采集助手在接收会话内执行，经 seized/seize-failed 事件同步；停止/崩溃自动解除，BLE 重连自动补独占。修复"按键只登记不执行、只有语音键可用"。
 - connected 事件不再清除独占状态：独占由助手持有并跨连接绑定持续有效，仅 disconnected/stopped/error 清除。

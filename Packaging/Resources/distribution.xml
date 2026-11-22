@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Google Remote Voice Enhanced</title>
+    <organization>com.googleremotevoice</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="false" hostArchitectures="arm64"/>
+    <welcome file="welcome.html"/>
+    <conclusion file="conclusion.html"/>
+    <license file="license.html"/>
+    <pkg-ref id="com.googleremotevoice.enhanced"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.googleremotevoice.enhanced"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.googleremotevoice.enhanced" visible="false">
+        <pkg-ref id="com.googleremotevoice.enhanced"/>
+    </choice>
+    <pkg-ref id="com.googleremotevoice.enhanced" version="1.0.0" onConclusion="none">GoogleRemoteVoice-component.pkg</pkg-ref>
+</installer-gui-script>

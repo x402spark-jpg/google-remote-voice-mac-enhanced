@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;font-size:13px;line-height:1.6;color:#222}
+h1{font-size:18px}h2{font-size:14px;margin-top:14px}code{background:#f2f2f2;padding:1px 4px;border-radius:3px}
+.warn{background:#fff6e5;border:1px solid #f0d9a8;padding:8px 10px;border-radius:6px}
+</style></head>
+<body>
+<h1>Google Remote Voice Enhanced · 一体安装</h1>
+<p>把 Google Chromecast 语音遥控器（G9N9N 家族，含 <code>0x011B</code>/固件 0.0.1 批次）变成 Mac 的「按住说话」麦克风 + 14 键快捷键控制器。</p>
+<h2>本安装包会装好</h2>
+<ul>
+<li><b>Google Remote Voice.app</b>（增强版）→ 应用程序</li>
+<li><b>Remote Buddy Mic 虚拟麦克风驱动</b>（USB-transport，豆包输入法可识别）→ 系统音频插件目录，<b>无需另装 BlackHole、无需重启电脑</b></li>
+</ul>
+<p class="warn">⚠️ 安装结束时会重启一次 CoreAudio 以加载驱动，系统声音会中断几秒钟后自动恢复，属正常现象。</p>
+<h2>仍需你手动完成（系统安全要求，无法静默）</h2>
+<ul>
+<li><b>Apple PacketLogger</b>：14 键接收依赖它。Apple 许可不允许第三方打包，请自行从 Apple 官方下载（需 Apple 账号）。安装后打开 App 会引导。</li>
+<li><b>权限授权</b>：蓝牙 / 辅助功能 / 输入监控，以及按键接收的管理员授权，系统会弹窗请你确认。</li>
+<li><b>输入法设置</b>：把豆包/Handy/Typeless 的麦克风选为 <code>Remote Buddy Mic</code>，并设置匹配的语音快捷键。</li>
+</ul>
+<p>适用：Apple Silicon · macOS 14+（已在 macOS 26.5.1 实测）。本构建未经 Apple 公证，首次打开请右键 → 打开。</p>
+</body>
+</html>

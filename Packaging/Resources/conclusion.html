@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;font-size:13px;line-height:1.7;color:#222}
+h1{font-size:18px}ol{padding-left:20px}code{background:#f2f2f2;padding:1px 4px;border-radius:3px}
+a{color:#0a66c2}
+</style></head>
+<body>
+<h1>安装完成 · 接下来 5 步</h1>
+<ol>
+<li><b>打开 App</b>：应用程序 → Google Remote Voice（首次右键 → 打开）。在窗口里授予<b>蓝牙 / 辅助功能 / 输入监控</b>。</li>
+<li><b>配对遥控器</b>：系统设置 → 蓝牙，连接 Chromecast Remote。</li>
+<li><b>装 PacketLogger（14 键需要）</b>：从 <a href="https://developer.apple.com/download/all/?q=Additional%20Tools">Apple 官方下载页</a> 下载 <b>Additional Tools for Xcode</b>（正式版，需 Apple 账号），打开 DMG 把 <code>Hardware/PacketLogger.app</code> 拖进应用程序；或在 App 里点「选择工具…」指向它。</li>
+<li><b>设输入法</b>：豆包输入法 → 语音输入 → 麦克风选 <code>Remote Buddy Mic</code>；长按模式快捷键（如左⌘+左⇧）。回到 App 把「语音键」录成同一个组合键。</li>
+<li><b>开按键接收</b>：App 里点「开启按键接收」→ 输管理员密码。先勾「按键检测模式」把 14 键各按一遍核对计数，再取消勾选启用映射。</li>
+</ol>
+<p>语音：按住语音键 &gt;1.5 秒再说话，松开即停（遥控器松开就停止推流，免提/免按模式不适用）。</p>
+<p>详细文档与排障见项目 README 与 docs/。反馈建议欢迎到 GitHub Issues。</p>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>RemoteBuddyMic</string>
+	<key>CFBundleIconFile</key>
+	<string>BlackHole.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.zfdang.remote-buddy.mic</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Remote Buddy Virtual Microphone</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.2</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>3</string>
+	<key>CFPlugInFactories</key>
+	<dict>
+		<key>6e96c6dd-4f1d-4f25-85a4-7e233a87697d</key>
+		<string>BlackHole_Create</string>
+	</dict>
+	<key>CFPlugInTypes</key>
+	<dict>
+		<key>443ABAB8-E7B3-491A-B985-BEB9187030DB</key>
+		<array>
+			<string>6e96c6dd-4f1d-4f25-85a4-7e233a87697d</string>
+		</array>
+	</dict>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright (C) 2019 Existential Audio Inc. Modified for Remote Buddy (2026). Licensed under GPL-3.0-only.</string>
+</dict>
+</plist>
