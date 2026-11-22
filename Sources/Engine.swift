@@ -247,7 +247,7 @@ final class Engine: ObservableObject {
 
     func checkPermissions() {
         let ax = AXIsProcessTrusted()
-        let bh = Self.deviceID(named: "BlackHole") != nil
+        let bh = Self.deviceID(named: config.effectiveOutputDeviceName) != nil
         let im = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
         if axTrusted != ax { axTrusted = ax }
         if blackholeFound != bh { blackholeFound = bh }
@@ -286,12 +286,13 @@ final class Engine: ObservableObject {
         }
     }
     func audioWatchdog(reason: String = "定时检查") {
-        guard let bh = Self.deviceID(named: "BlackHole"), let u = engine.outputNode.audioUnit else { return }
+        let target = config.effectiveOutputDeviceName
+        guard let bh = Self.deviceID(named: target), let u = engine.outputNode.audioUnit else { return }
         var cur: AudioDeviceID = 0
         var sz = UInt32(MemoryLayout<AudioDeviceID>.size)
         AudioUnitGetProperty(u, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &cur, &sz)
         guard cur != bh || !engine.isRunning else { return }
-        L("⚠️ 音频输出脱离 BlackHole（\(reason)，当前设备 \(cur)），自动重新挂载…")
+        L("⚠️ 音频输出脱离 \(target)（\(reason)，当前设备 \(cur)），自动重新挂载…")
         engine.stop()
         setOutputDevice()
         engine.prepare()
@@ -299,28 +300,30 @@ final class Engine: ObservableObject {
         verifyOutputDevice()
     }
     private func setOutputDevice() {
-        guard let bh = Self.deviceID(named: "BlackHole") else { L("⚠️ 未找到 BlackHole 声卡，语音无法当麦克风"); return }
+        let target = config.effectiveOutputDeviceName
+        guard let bh = Self.deviceID(named: target) else { L("⚠️ 未找到 \(target) 声卡，语音无法当麦克风"); return }
         guard let u = engine.outputNode.audioUnit else { L("⚠️ 输出单元不可用"); return }
         var d = bh
         let st = AudioUnitSetProperty(u, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &d, UInt32(MemoryLayout<AudioDeviceID>.size))
-        if st != noErr { L("⚠️ 切换输出到 BlackHole 失败 (OSStatus \(st))") }
+        if st != noErr { L("⚠️ 切换输出到 \(target) 失败 (OSStatus \(st))") }
     }
     private func verifyOutputDevice() {
-        guard let bh = Self.deviceID(named: "BlackHole"), let u = engine.outputNode.audioUnit else { return }
+        let target = config.effectiveOutputDeviceName
+        guard let bh = Self.deviceID(named: target), let u = engine.outputNode.audioUnit else { return }
         var cur: AudioDeviceID = 0
         var sz = UInt32(MemoryLayout<AudioDeviceID>.size)
         AudioUnitGetProperty(u, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &cur, &sz)
         if cur == bh {
-            L("音频输出已挂到 BlackHole (设备 \(bh))")
+            L("音频输出已挂到 \(target) (设备 \(bh))")
         } else {
             // 启动过程又被重置了：停机重设再启动
-            L("⚠️ 输出设备被重置 (当前 \(cur))，重试切换 BlackHole…")
+            L("⚠️ 输出设备被重置 (当前 \(cur))，重试切换 \(target)…")
             engine.stop()
             setOutputDevice()
             engine.prepare()
             do { try engine.start() } catch { L("音频引擎重启失败: \(error)") }
             AudioUnitGetProperty(u, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &cur, &sz)
-            L(cur == bh ? "音频输出已挂到 BlackHole (设备 \(bh))" : "❌ 仍未能切到 BlackHole，语音无法当麦克风")
+            L(cur == bh ? "音频输出已挂到 \(target) (设备 \(bh))" : "❌ 仍未能切到 \(target)，语音无法当麦克风")
         }
     }
     static func deviceID(named target: String) -> AudioDeviceID? {
@@ -951,19 +954,59 @@ final class Engine: ObservableObject {
 
     // ---------- synthesize keys ----------
     private let evSrc = CGEventSource(stateID: .hidSystemState)
-    func postKey(_ code: CGKeyCode, down: Bool, cmd: Bool, shift: Bool = false, opt: Bool = false, ctrl: Bool = false, autorepeat: Bool = false) {
-        guard let e = CGEvent(keyboardEventSource: evSrc, virtualKey: code, keyDown: down) else { return }
-        var flags: CGEventFlags = []
-        if down {
-            if cmd { flags.insert(.maskCommand) }
-            if shift { flags.insert(.maskShift) }
-            if opt { flags.insert(.maskAlternate) }
-            if ctrl { flags.insert(.maskControl) }
+    // 豆包等输入法靠「修饰键 keyDown 事件」识别组合键，只给主键挂 flags 不会触发：
+    // 必须真实按下左⌃/⌥/⇧/⌘ 再按主键，松开时反序释放。
+    // 纯修饰键组合（如左⌘+左⇧）：主键本身就是修饰键，其余修饰键先按，主键最后按。
+    private static let modOrder: [(CGEventFlags, CGKeyCode)] = [
+        (.maskControl, 0x3B), (.maskAlternate, 0x3A), (.maskShift, 0x38), (.maskCommand, 0x37),
+    ]
+    private static func modFlag(_ code: CGKeyCode) -> CGEventFlags? {
+        switch code {
+        case 0x36, 0x37: return .maskCommand
+        case 0x38, 0x3C: return .maskShift
+        case 0x3A, 0x3D: return .maskAlternate
+        case 0x3B, 0x3E: return .maskControl
+        default: return nil
         }
+    }
+    private var heldMods: [CGKeyCode] = []
+    private func postRaw(_ code: CGKeyCode, down: Bool, flags: CGEventFlags, autorepeat: Bool = false) {
+        guard let e = CGEvent(keyboardEventSource: evSrc, virtualKey: code, keyDown: down) else { return }
         e.flags = flags
         if autorepeat { e.setIntegerValueField(.keyboardEventAutorepeat, value: 1) }
         e.setIntegerValueField(.eventSourceUserData, value: kSyntheticMarker)
         e.post(tap: .cghidEventTap)
+    }
+    func postKey(_ code: CGKeyCode, down: Bool, cmd: Bool, shift: Bool = false, opt: Bool = false, ctrl: Bool = false, autorepeat: Bool = false) {
+        var flags: CGEventFlags = []
+        if cmd { flags.insert(.maskCommand) }
+        if shift { flags.insert(.maskShift) }
+        if opt { flags.insert(.maskAlternate) }
+        if ctrl { flags.insert(.maskControl) }
+        let ownFlag = Self.modFlag(code)
+        if down {
+            if autorepeat {
+                postRaw(code, down: true, flags: flags, autorepeat: true)
+                return
+            }
+            var acc: CGEventFlags = []
+            for (f, kc) in Self.modOrder where flags.contains(f) && f != ownFlag {
+                acc.insert(f)
+                postRaw(kc, down: true, flags: acc)
+                heldMods.append(kc)
+            }
+            postRaw(code, down: true, flags: flags)
+            if ownFlag != nil { heldMods.append(code) }
+        } else {
+            var rest: CGEventFlags = []
+            for kc in heldMods { if let f = Self.modFlag(kc) { rest.insert(f) } }
+            if ownFlag == nil { postRaw(code, down: false, flags: rest) }
+            for kc in heldMods.reversed() {
+                if let f = Self.modFlag(kc) { rest.remove(f) }
+                postRaw(kc, down: false, flags: rest)
+            }
+            heldMods.removeAll()
+        }
     }
 }
 

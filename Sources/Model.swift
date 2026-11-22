@@ -124,6 +124,12 @@ struct Config: Codable {
         let value = voiceGainDB ?? 18
         return value.isFinite ? min(24, max(0, value)) : 18
     }
+    // 语音灌入的虚拟声卡名（子串匹配）；缺省 BlackHole，可指向 Remote Buddy Mic 等回环设备
+    var outputDeviceName: String? = nil
+    var effectiveOutputDeviceName: String {
+        let name = outputDeviceName?.trimmingCharacters(in: .whitespaces) ?? ""
+        return name.isEmpty ? "BlackHole" : name
+    }
     var googleDefaultsVersion: Int? = nil
 
     static let known = GVRMap.known

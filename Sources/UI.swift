@@ -21,7 +21,7 @@ struct StatusView: View {
                 row("蓝牙", e.btOn)
                 row("遥控器连接", e.remoteConnected)
                 row("语音通道就绪", e.handshakeReady)
-                row("BlackHole 声卡", e.blackholeFound)
+                row("虚拟声卡（\(e.config.effectiveOutputDeviceName)）", e.blackholeFound)
                 row("谷歌按键接收", e.googleCapture.ready)
                 if e.micStreaming {
                     HStack(spacing: 8) { StatusDot(ok: true); Text("🎤 正在采集语音").foregroundColor(.green) }
@@ -114,7 +114,7 @@ struct ContentView: View {
             permRow("蓝牙", e.btOn, action: nil, hint: "系统设置里打开蓝牙")
             permRow("辅助功能（合成/拦截按键必需）", e.axTrusted, action: { e.requestAX(); e.openAXSettings() }, hint: "点右侧授权")
             permRow("输入监控（读取遥控器按键必需）", e.inputMonitoringOK, action: { e.requestInputMonitoring(); e.openInputMonitoringSettings() }, hint: "点右侧授权")
-            permRow("BlackHole 虚拟声卡（当麦克风用）", e.blackholeFound, action: nil, hint: "需安装 BlackHole")
+            permRow("虚拟声卡（当麦克风用）", e.blackholeFound, action: nil, hint: "在 config.json 配置 outputDeviceName")
             Toggle("开机自动启动", isOn: Binding(
                 get: { e.launchAtLogin },
                 set: { e.setLaunchAtLogin($0) }))
@@ -141,7 +141,7 @@ struct ContentView: View {
             Text("遥控器连接").font(.headline)
             HStack { StatusDot(ok: e.remoteConnected); Text(e.remoteConnected ? "已连接：\(e.remoteName.isEmpty ? "语音遥控器" : e.remoteName)" : "未连接（请在系统蓝牙里配对连接遥控器）") }
             HStack { StatusDot(ok: e.handshakeReady); Text(e.handshakeReady ? "语音通道就绪" : "语音通道未就绪") }
-            if e.micStreaming { HStack { StatusDot(ok: true); Text("🎤 正在采集语音 → BlackHole").foregroundColor(.green) } }
+            if e.micStreaming { HStack { StatusDot(ok: true); Text("🎤 正在采集语音 → \(e.config.effectiveOutputDeviceName)").foregroundColor(.green) } }
         }
     }
 
@@ -226,7 +226,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("语音键").font(.headline)
             mappingRow(usage: -1, name: "语音键", display: e.config.voice.display)
-            Toggle("同时开启麦克风（灌入 BlackHole）", isOn: Binding(
+            Toggle("同时开启麦克风（灌入虚拟声卡）", isOn: Binding(
                 get: { e.config.voiceStartsMic },
                 set: { e.config.voiceStartsMic = $0; e.saveConfig() }))
             HStack {
