@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — 2026-11-23
+
+### Enhanced（本仓库增强）
+
+- 默认按键更新（googleDefaultsVersion 2）：电源 F12→**Tab**、YouTube F9→**⌘C**、Netflix F10→**⌘V**、输入源 Tab→**⌘A**（来自实测自定义布局）。旧配置自动迁移：仅升级仍等于 v1 旧默认的键，用户自定义/已清除的映射一律保留，迁移前备份 `config.json.before-google-defaults-v2.json`。
+- 文档更新：PacketLogger 取 **Additional Tools for Xcode 27.2 正式版**（Apple 官方签名）实测安装验证；README/ALLINONE 默认按键表同步。
+- 新增迁移单元测试（旧默认升级、自定义保留、清除键不复活）。
+
 ## Unreleased
 
 ### Enhanced（本仓库增强）

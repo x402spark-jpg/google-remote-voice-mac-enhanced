@@ -17,5 +17,5 @@
     <choice id="com.googleremotevoice.enhanced" visible="false">
         <pkg-ref id="com.googleremotevoice.enhanced"/>
     </choice>
-    <pkg-ref id="com.googleremotevoice.enhanced" version="1.0.0" onConclusion="none">GoogleRemoteVoice-component.pkg</pkg-ref>
+    <pkg-ref id="com.googleremotevoice.enhanced" version="1.0.1" onConclusion="none">GoogleRemoteVoice-component.pkg</pkg-ref>
 </installer-gui-script>

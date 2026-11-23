@@ -11,7 +11,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-VERSION="${PKG_VERSION:-1.0.0}"
+VERSION="${PKG_VERSION:-1.0.1}"
 IDENTIFIER="${PKG_IDENTIFIER:-com.googleremotevoice.enhanced}"
 mkdir -p build
 

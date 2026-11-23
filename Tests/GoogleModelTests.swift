@@ -41,12 +41,18 @@ import Foundation
         check(config.effectiveVoiceGainDB == 18, "non-finite volume uses safe recommendation")
         config.voiceGainDB = nil
         check(config.buttons.first(where: { $0.usage == 11 })?.keycode == 0x33, "Google back defaults to Backspace")
-        check(config.googleDefaultsVersion == 1, "fresh config must not rerun legacy migration after user clears a key")
+        check(config.googleDefaultsVersion == Config.googleDefaultsVersionCurrent, "fresh config must not rerun legacy migration after user clears a key")
         check(Set(config.buttons.map(\.usage)).count == config.buttons.count, "no overlapping Xiaomi/Google IDs")
         for usage in physical {
             check(config.buttons.first(where: { $0.usage == usage })?.keycode != KeyNames.kNone, "physical key \(usage) has default action")
         }
-        check(config.buttons.first(where: { $0.usage == 1 })?.keycode == 0x6F, "power defaults to safe F12")
+        check(config.buttons.first(where: { $0.usage == 1 })?.keycode == 0x30, "power defaults to Tab")
+        let youtube = config.buttons.first(where: { $0.usage == 14 })
+        check(youtube?.keycode == 0x08 && youtube?.cmd == true, "YouTube defaults to Cmd+C")
+        let netflix = config.buttons.first(where: { $0.usage == 15 })
+        check(netflix?.keycode == 0x09 && netflix?.cmd == true, "Netflix defaults to Cmd+V")
+        let inputSource = config.buttons.first(where: { $0.usage == 17 })
+        check(inputSource?.keycode == 0x00 && inputSource?.cmd == true, "input source defaults to Cmd+A")
         check(config.buttons.first(where: { $0.usage == 12 })?.keycode == 0x10010, "volume up uses system volume")
         check(config.buttons.first(where: { $0.usage == 13 })?.keycode == 0x10011, "volume down uses system volume")
         check(config.buttons.first(where: { $0.usage == 8 })?.keycode == 0x10012, "mute uses system mute")
@@ -70,6 +76,24 @@ import Foundation
         check(old.effectiveAutoStartGoogleCapture, "legacy config enables automatic capture without changing mappings")
         old.mergeKnown()
         check(old.buttons.count == Config.known.count, "legacy config acquires all known keys")
+        // v1 → v2 迁移：旧默认升级、自定义保留
+        var v1 = Config.defaultConfig
+        v1.googleDefaultsVersion = 1
+        v1.buttons[v1.buttons.firstIndex(where: { $0.usage == 1 })!] = ButtonMapping(usage: 1, name: "电源", keycode: 0x6F)
+        v1.buttons[v1.buttons.firstIndex(where: { $0.usage == 14 })!] = ButtonMapping(usage: 14, name: "YouTube", keycode: 0x65)
+        v1.buttons[v1.buttons.firstIndex(where: { $0.usage == 15 })!] = ButtonMapping(usage: 15, name: "Netflix", keycode: 0x31) // 用户自定义空格
+        v1.buttons[v1.buttons.firstIndex(where: { $0.usage == 17 })!] = ButtonMapping(usage: 17, name: "输入源", keycode: 0x30)
+        v1.migrateGoogleDefaultsV2()
+        check(v1.googleDefaultsVersion == Config.googleDefaultsVersionCurrent, "migration bumps defaults version")
+        check(v1.buttons.first(where: { $0.usage == 1 })?.keycode == 0x30, "v1 power F12 migrates to Tab")
+        check(v1.buttons.first(where: { $0.usage == 14 })?.keycode == 0x08, "v1 YouTube F9 migrates to Cmd+C")
+        check(v1.buttons.first(where: { $0.usage == 15 })?.keycode == 0x31, "custom Netflix mapping survives migration")
+        check(v1.buttons.first(where: { $0.usage == 17 })?.keycode == 0x00, "v1 input source Tab migrates to Cmd+A")
+        var cleared = Config.defaultConfig
+        cleared.googleDefaultsVersion = 1
+        cleared.buttons[cleared.buttons.firstIndex(where: { $0.usage == 1 })!] = ButtonMapping(usage: 1, name: "电源") // kNone = 用户清除
+        cleared.migrateGoogleDefaultsV2()
+        check(cleared.buttons.first(where: { $0.usage == 1 })?.keycode == KeyNames.kNone, "cleared key stays cleared after migration")
         print("\(checked-failed)/\(checked) model checks passed")
         exit(failed == 0 ? 0 : 1)
     }

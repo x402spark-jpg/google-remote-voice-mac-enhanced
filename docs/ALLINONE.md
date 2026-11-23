@@ -15,7 +15,7 @@
 2. **配对遥控器**：系统设置 → 蓝牙，连接 `Chromecast Remote`。
 3. **装 PacketLogger（14 键需要）**：Apple 许可不允许第三方打包，须自行下载：
    - 打开 https://developer.apple.com/download/all/?q=Additional%20Tools （需 Apple 账号；若停在注册页，点 *I'm not interested* 跳过或同意免费协议）。
-   - 下载 **Additional Tools for Xcode 正式版**（不带 beta），打开 DMG，把 `Hardware/PacketLogger.app` 拖进「应用程序」。
+   - 下载 **Additional Tools for Xcode 正式版**（不带 beta；已实测 27.2，2026-10-29 发布），打开 DMG，把 `Hardware/PacketLogger.app` 拖进「应用程序」。
    - 或在 App 里点「选择工具…」指向 PacketLogger。
 4. **设输入法**：见 [豆包配置](DOUBAO.md)。麦克风选 `Remote Buddy Mic`，语音快捷键与 App 的「语音键」一致。
 5. **开按键接收**：App 里点「开启按键接收」→ 输管理员密码。先勾「按键检测模式」把 14 键各按一遍，核对计数到 14/14，再**取消勾选**启用映射。
@@ -23,7 +23,7 @@
 ## 使用
 
 - **语音**：按住语音键 **>1.5 秒**再说话，松开即停。遥控器松开就停止推流，**免提/免按模式不适用**。
-- **14 键**：方向=光标、OK=回车、返回=退格、主页=Home、音量±=系统音量、静音=系统静音、输入源=Tab；YouTube/Netflix/电源可重录或设为打开应用/网址。
+- **14 键**：方向=光标、OK=回车、返回=退格、主页=Home、音量±=系统音量、静音=系统静音、电源=Tab、输入源=⌘A、YouTube=⌘C、Netflix=⌘V；全部可重录或设为打开应用/网址。v1.0.1 起旧默认（电源 F12、YouTube F9、Netflix F10、输入源 Tab）自动迁移为新默认，用户自定义映射不受影响（迁移前自动备份 `config.json.before-google-defaults-v2.json`）。
 
 ## 排障
 

@@ -132,6 +132,8 @@ struct Config: Codable {
         return name.isEmpty ? "Remote Buddy Mic" : name
     }
     var googleDefaultsVersion: Int? = nil
+    // v2: 电源→Tab、YouTube→⌘C、Netflix→⌘V、输入源→⌘A（实测自定义布局升级为默认）
+    static let googleDefaultsVersionCurrent = 2
 
     static let known = GVRMap.known
     // sensible defaults (keycodes)
@@ -142,12 +144,12 @@ struct Config: Codable {
         3:(0x7E,false,false,false,false), 4:(0x7D,false,false,false,false),
         5:(0x7B,false,false,false,false), 6:(0x7C,false,false,false,false),
         7:(0x24,false,false,false,false), 11:(0x33,false,false,false,false),
-        1:(0x6F,false,false,false,false), 2:(KeyNames.kPlayPause,false,false,false,false),
+        1:(0x30,false,false,false,false), 2:(KeyNames.kPlayPause,false,false,false,false),
         8:(KeyNames.kMute,false,false,false,false), 9:(0x64,false,false,false,false),
         10:(0x73,false,false,false,false),
         12:(KeyNames.kVolumeUp,false,false,false,false), 13:(KeyNames.kVolumeDown,false,false,false,false),
-        14:(0x65,false,false,false,false), 15:(0x6D,false,false,false,false),
-        16:(KeyNames.kPlayPause,false,false,false,false), 17:(0x30,false,false,false,false),
+        14:(0x08,true,false,false,false), 15:(0x09,true,false,false,false),
+        16:(KeyNames.kPlayPause,false,false,false,false), 17:(0x00,true,false,false,false),
     ]
     static var defaultConfig: Config {
         let btns = known.map { k -> ButtonMapping in
@@ -158,7 +160,7 @@ struct Config: Codable {
         }
         return Config(buttons: btns,
                       voice: ButtonMapping(usage: -1, name: "语音键", keycode: 0x36, cmd: true),
-                      voiceStartsMic: true, googleDefaultsVersion: 1)
+                      voiceStartsMic: true, googleDefaultsVersion: googleDefaultsVersionCurrent)
     }
     mutating func mergeKnown() {
         for k in Config.known {
@@ -182,7 +184,20 @@ struct Config: Codable {
             buttons[i] = ButtonMapping(usage: buttons[i].usage, name: buttons[i].name,
                                       keycode: value.0, cmd: value.1, shift: value.2, opt: value.3, ctrl: value.4)
         }
-        googleDefaultsVersion = 1
+        googleDefaultsVersion = Self.googleDefaultsVersionCurrent
+    }
+    // v1 → v2：仅把仍等于 v1 旧默认的键升级为新默认，用户自定义映射一律保留。
+    mutating func migrateGoogleDefaultsV2() {
+        let oldV1: [Int: Int] = [1: 0x6F, 14: 0x65, 15: 0x6D, 17: 0x30]
+        for i in buttons.indices {
+            guard let oldKey = oldV1[buttons[i].usage],
+                  buttons[i].keycode == oldKey,
+                  !buttons[i].cmd, !buttons[i].shift, !buttons[i].opt, !buttons[i].ctrl,
+                  let value = Self.defaultTarget[buttons[i].usage] else { continue }
+            buttons[i] = ButtonMapping(usage: buttons[i].usage, name: buttons[i].name,
+                                       keycode: value.0, cmd: value.1, shift: value.2, opt: value.3, ctrl: value.4)
+        }
+        googleDefaultsVersion = Self.googleDefaultsVersionCurrent
     }
 }
 
@@ -200,6 +215,10 @@ final class ConfigStore {
             let backup = path + ".before-google-defaults.json"
             if !FileManager.default.fileExists(atPath: backup) { try? data.write(to: URL(fileURLWithPath: backup), options: .atomic) }
             cfg.installGoogleDefaults(overwrite: false)
+        } else if cfg.googleDefaultsVersion! < Config.googleDefaultsVersionCurrent {
+            let backup = path + ".before-google-defaults-v2.json"
+            if !FileManager.default.fileExists(atPath: backup) { try? data.write(to: URL(fileURLWithPath: backup), options: .atomic) }
+            cfg.migrateGoogleDefaultsV2()
         }
         return cfg
     }

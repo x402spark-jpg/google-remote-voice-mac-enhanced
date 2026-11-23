@@ -126,9 +126,9 @@ cd google-remote-voice-mac
 | 主页 | Home |
 | 音量 +/- | 系统音量 +/- |
 | 静音 | 系统静音 |
-| 信源 | Tab |
-| YouTube / Netflix | F9 / F10，可重新录制 |
-| 电源 | F12，可重新录制；默认不让 Mac 睡眠 |
+| 信源 | ⌘A，可重新录制 |
+| YouTube / Netflix | ⌘C / ⌘V，可重新录制 |
+| 电源 | Tab，可重新录制；默认不让 Mac 睡眠 |
 | 语音 | 默认右 Command，可改为输入法的触发快捷键 |
 
 YouTube / Netflix 两行还可在“动作”菜单选择“打开应用…”或“打开网址…”，也有对应网站的预设。设置自动保存，点击“测试”可验证；打开动作只在按下时执行一次，不因长按重复打开。
@@ -144,8 +144,8 @@ YouTube / Netflix 两行还可在“动作”菜单选择“打开应用…”�
 - 实测遥控器：Chromecast Voice Remote / G9N9N 家族；VID/PID `18D1:9450`，DIS A0，固件 26.7。
 - 同时只启用一支目标遥控器；遇到同款设备歧义会暂停映射。
 - 需要 Xcode Command Line Tools、BlackHole 2ch，以及 Apple PacketLogger。
-- PacketLogger 必须从 [Apple 官方 Additional Tools for Xcode](https://developer.apple.com/bluetooth/) 获取，可能需要登录 Apple 账号。**仓库不打包 Apple 工具。**
-- 本次使用的 PacketLogger App 最低系统要求为 macOS 14，CLI 自报 26.0；其他版本需复验。
+- PacketLogger 必须从 [Apple 官方 Additional Tools for Xcode](https://developer.apple.com/download/all/?q=Additional%20Tools) 获取，需要登录 Apple 账号（停在注册页可点 *I'm not interested* 跳过）。**仓库不打包 Apple 工具。**
+- 已实测 **Additional Tools for Xcode 27.2 正式版**（2026-10-29 发布）中的 PacketLogger：Apple 官方签名，拷入 `/Applications` 即可被本应用识别；最低系统要求 macOS 14。其他版本需复验。
 
 
 ## 进一步了解
