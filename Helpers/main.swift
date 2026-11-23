@@ -36,6 +36,17 @@ func seizeDevice(_ device: IOHIDDevice) -> Bool {
     return seized
 }
 
+func forgetHID(_ device: IOHIDDevice) {
+    guard let index = seizedHIDs.firstIndex(where: { $0 == device }) else { return }
+    let old = seizedHIDs.remove(at: index)
+    _ = IOHIDDeviceClose(old, IOOptionBits(kIOHIDOptionsTypeSeizeDevice))
+}
+
+func reportSeizeIfHeld() {
+    guard !seizedHIDs.isEmpty else { return }
+    emit(GoogleCaptureRecord(kind: "seized", message: "\(seizedHIDs.count)"))
+}
+
 // 返回初次枚举独占成功的设备数；BLE 唤醒重连后的新设备实例由 matching 回调补独占。
 func startHIDSeize() -> Int {
     let mgr = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(0))
@@ -45,6 +56,10 @@ func startHIDSeize() -> Int {
         if seizeDevice(dvc), !seizedHIDs.isEmpty {
             emit(GoogleCaptureRecord(kind: "seized", message: "\(seizedHIDs.count)"))
         }
+    }, nil)
+    // 断开的旧实例及时释放，避免 seizedHIDs 随重连次数无限增长。
+    IOHIDManagerRegisterDeviceRemovalCallback(mgr, { _, _, _, dvc in
+        forgetHID(dvc)
     }, nil)
     if let set = IOHIDManagerCopyDevices(mgr) as? Set<IOHIDDevice> {
         for dvc in set { _ = seizeDevice(dvc) }
@@ -271,6 +286,9 @@ do {
                         if record.kind == "connected" {
                             sourceReady = true
                             emit(GoogleCaptureRecord(kind: "ready", message: "已绑定遥控器，等待按键"))
+                            // 重连可能复用原 HID 实例（无 matching 回调）；独占仍在持有时重报，
+                            // 避免应用端在 disconnected 后永久停用映射。
+                            reportSeizeIfHeld()
                         }
                     }
                 }
@@ -304,6 +322,8 @@ do {
             emit(GoogleCaptureRecord(kind: "disconnected", message: "等待遥控器重连，正在刷新连接绑定…"))
             do { try startChild() }
             catch { finish("刷新连接失败：\(error.localizedDescription)", failed: true); return }
+            // 刷新只重启 PacketLogger，HID 独占从未释放；重报状态，避免应用误判映射暂停。
+            reportSeizeIfHeld()
         }
         emit(GoogleCaptureRecord(kind: "heartbeat"))
     }

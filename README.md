@@ -48,7 +48,7 @@
 </td>
 <td width="33%" valign="top">
 <h3>02 &nbsp; 松开，出字</h3>
-音频经 BlackHole 送入 Handy，由本地模型转写到当前文本框。
+音频经自带虚拟麦克风送入 Handy / 豆包等工具，转写到当前文本框。
 </td>
 <td width="33%" valign="top">
 <h3>03 &nbsp; 每颗键，都有用</h3>
@@ -59,34 +59,55 @@
 
 <br>
 
-> **开始前**：当前为 0.1 实验版，支持已验证的 Chromecast Voice Remote（G9N9N 家族）与 Apple Silicon Mac。普通按键接收需要单独安装 Apple PacketLogger 并完成管理员授权；[先看兼容性](#兼容性)。
+> **开始前**：当前为 1.0.2 版，支持已验证的 Chromecast Voice Remote（G9N9N 家族）与 Apple Silicon Mac（macOS 14+，实测 15.8.2 与 26.5.1/26.6）。普通按键接收需要单独安装 Apple PacketLogger 并完成管理员授权；[先看兼容性](#兼容性)。
 
-## 一套配齐：遥控器 + BlackHole + Handy
+## 演示视频
+
+> 🎬 安装与使用演示视频录制中，发布后将嵌入此处。先看 [一体安装指南](docs/ALLINONE.md) 即可上手。
+
+<!-- VIDEO: 录制完成后在此嵌入，例如：
+[![演示视频](docs/assets/video-cover.png)](https://www.bilibili.com/video/XXXX)
+-->
+
+## 一套配齐：遥控器 + 虚拟麦克风 + 语音输入工具
 
 | 组件 | 在这套方案里负责什么 | 获取入口 |
 | --- | --- | --- |
 | **Chromecast Voice Remote** | 实体语音键、麦克风与自定义按键 | 优先使用已有设备；[核对兼容性](#兼容性) |
 | **Google Remote Voice** | 连接遥控器、解码音频、映射按键 | [下方安装步骤](#快速开始) |
-| **BlackHole 2ch** | 把遥控器音频送进语音识别工具 | [开源项目与安装说明](https://github.com/ExistentialAudio/BlackHole) |
-| **Handy** | 在本机把语音转成文字，粘贴到当前文本框 | **[官网下载](https://handy.computer/) · [GitHub](https://github.com/cjpais/Handy) · [发行版本](https://github.com/cjpais/Handy/releases/latest)** |
+| **Remote Buddy Mic**（安装包自带） | 把遥控器音频送进语音识别工具；兼容 BlackHole 2ch | 随 `.pkg` 一体安装，无需另装 |
+| **Handy / 豆包等输入工具** | 在本机把语音转成文字，粘贴到当前文本框 | **[Handy 官网](https://handy.computer/) · [GitHub](https://github.com/cjpais/Handy) · [发行版本](https://github.com/cjpais/Handy/releases/latest)**；豆包见 [配置指南](docs/DOUBAO.md) |
 | **Apple PacketLogger** | 接收常规 HID 未转交的普通按键通知 | [Apple 官方下载页](https://developer.apple.com/download/all/?q=Additional%20Tools)（需 Apple 账号） |
 
-> **第一次用？** 先按[快速开始](#快速开始)装好本项目，再照着 [Handy 配置指南](docs/HANDY.md)设置 **BlackHole 2ch + 按住说话 + 相同快捷键**。
+> **第一次用？** 先按[快速开始](#快速开始)装好本项目，再照着 [Handy 配置指南](docs/HANDY.md) 或 [豆包配置](docs/DOUBAO.md) 设置 **输入设备 + 按住说话 + 相同快捷键**。
 
 Handy 是独立的免费开源语音转文字工具，支持本地离线识别；本项目不捆绑它。不同软件版本的界面可能有变化，下载入口始终指向其官方站点与仓库。
 
 
 ## 快速开始
 
+**推荐：一体安装包（无需 Homebrew / BlackHole / 编译工具）**
+
+1. 从 [Releases](../../releases) 下载最新的 `GoogleRemoteVoice-Enhanced-*.pkg`，双击安装（App + 虚拟麦克风驱动一次装好；安装结束会短暂重启一次声音服务，属正常）。
+2. 首次打开若被系统拦截：**右键 → 打开**。在菜单栏图标里授予 **蓝牙 / 辅助功能 / 输入监控**。
+3. 照 [一体安装指南](docs/ALLINONE.md) 完成剩余 3 件事：配对遥控器、下载 Apple PacketLogger（14 键需要，Apple 许可须自行下载）、设置输入法（[豆包配置](docs/DOUBAO.md)）。设备和权限就绪后，按键接收默认自动开启，按系统弹窗输入管理员密码即可。
+
+> 升级旧版后若权限失效：在系统设置的辅助功能/输入监控列表里**先删旧条目（−）再重新添加（+）**，只拨开关无效。
+
+<details>
+<summary><strong>从源码构建（开发者）</strong></summary>
+
 ```sh
 git clone https://github.com/x402spark-jpg/google-remote-voice-mac-enhanced.git
-cd google-remote-voice-mac
+cd google-remote-voice-mac-enhanced
 ./install.sh
 ```
 
-安装脚本会检查 Homebrew、BlackHole 与编译工具，构建并复制 `Google Remote Voice.app` 到“应用程序”。如果首次安装 BlackHole 后无法看到设备，按驱动说明重启。
+安装脚本会检查编译工具、装入捆绑的 Remote Buddy Mic 驱动、构建并复制 `Google Remote Voice.app` 到“应用程序”（驱动安装需管理员密码）。
 
 另行从 Apple 下载 PacketLogger，将 **PacketLogger.app** 放入 `/Applications`，或在本应用中点击“选择工具…”。只下载磁盘镜像但不保留工具位置，会影响下次启动。
+
+</details>
 
 首次打开：
 
@@ -105,7 +126,7 @@ cd google-remote-voice-mac
 
 | 设置位置 | 建议配置 |
 | --- | --- |
-| Handy → 输入设备 | **BlackHole 2ch**，不要依赖系统默认麦克风 |
+| Handy → 输入设备 | **Remote Buddy Mic**（安装包自带；上游 BlackHole 方案选 BlackHole 2ch），不要依赖系统默认麦克风 |
 | Handy → 录音方式 | **Push to Talk / 按住说话** |
 | Handy → 快捷键 | 与本应用语音键完全一致，例如**右 Command** |
 | 本应用 → 语音键 | 保留“同时开启麦克风” |
@@ -140,10 +161,10 @@ YouTube / Netflix 两行还可在“动作”菜单选择“打开应用…”�
 
 ## 兼容性
 
-- 当前构建：**Apple Silicon，macOS 14+**；实测系统为 macOS 15.8.2。
-- 实测遥控器：Chromecast Voice Remote / G9N9N 家族；VID/PID `18D1:9450`，DIS A0，固件 26.7。
+- 当前构建：**Apple Silicon，macOS 14+**；实测系统为 macOS 15.8.2 与 26.5.1/26.6。
+- 实测遥控器：Chromecast Voice Remote / G9N9N 家族；VID/PID `18D1:9450`，DIS A0，固件 26.7；另实测 `0x011B` / 固件 0.0.1 批次。
 - 同时只启用一支目标遥控器；遇到同款设备歧义会暂停映射。
-- 需要 Xcode Command Line Tools、BlackHole 2ch，以及 Apple PacketLogger。
+- 一体安装包用户只需另装 Apple PacketLogger；从源码构建才需要 Xcode Command Line Tools。虚拟麦克风随包安装，也可改用 BlackHole 2ch。
 - PacketLogger 必须从 [Apple 官方 Additional Tools for Xcode](https://developer.apple.com/download/all/?q=Additional%20Tools) 获取，需要登录 Apple 账号（停在注册页可点 *I'm not interested* 跳过）。**仓库不打包 Apple 工具。**
 - 已实测 **Additional Tools for Xcode 27.2 正式版**（2026-10-29 发布）中的 PacketLogger：Apple 官方签名，拷入 `/Applications` 即可被本应用识别；最低系统要求 macOS 14。其他版本需复验。
 
@@ -176,8 +197,8 @@ Google 官方规格列有蓝牙、内置语音麦克风及两节 AAA 电池供�
 ```mermaid
 flowchart LR
     R[Google 遥控器] -->|ATVV 语音| D[本机 ADPCM 解码与音频增强]
-    D --> B[BlackHole 2ch]
-    B --> S[Handy 或其他语音输入工具]
+    D --> B[Remote Buddy Mic 虚拟麦克风]
+    B --> S[Handy / 豆包等语音输入工具]
     R -->|蓝牙原始按键通知| P[按需 PacketLogger 接收助手]
     P --> M[配置与按键状态机]
     M --> K[Mac 快捷键 / 鼠标 / 音量]
@@ -220,7 +241,7 @@ sh scripts/run-tests.sh
 ./build.sh
 ```
 
-无特权检查目前包含 66 项 Swift 解析/状态/恢复策略检查、42 项配置检查、8 项音频/接口边界检查、83 项语音会话检查、8 项自动启动检查及 8 项 Python 回归。管理员助手的启动/恢复实测需要 Apple 工具和知情授权，不在 CI 自动执行。
+无特权检查目前包含 96 项 Swift 解析/状态/恢复策略检查、51 项配置检查、8 项音频/接口边界检查、83 项语音会话检查、8 项自动启动检查及 8 项 Python 回归（合计 254 项）。管理员助手的启动/恢复实测需要 Apple 工具和知情授权，不在 CI 自动执行。
 
 本地长期使用建议固定签名身份，避免每次临时签名变化导致权限失效：
 
@@ -247,4 +268,4 @@ GOOGLE_REMOTE_SIGNING_IDENTITY="你的签名身份" ./build.sh
 
 ---
 
-**English:** Turn a Google Chromecast Voice Remote into a push-to-talk microphone and configurable shortcut controller on macOS. Based on mi-remote-mapper, with Google ATVV support, on-demand raw button capture and automatic trace-setting restoration. Apple Silicon/macOS 14+; tested on one macOS 15.8.2 system. Requires BlackHole and separately downloaded Apple PacketLogger. Speech recognition is provided by your chosen external app, not bundled here.
+**English:** Turn a Google Chromecast Voice Remote into a push-to-talk microphone and configurable shortcut controller on macOS. Based on mi-remote-mapper, with Google ATVV support, on-demand raw button capture and automatic trace-setting restoration. Apple Silicon/macOS 14+; tested on macOS 15.8.2 and 26.5.1/26.6. The all-in-one pkg bundles a virtual microphone driver (no BlackHole or reboot needed); Apple PacketLogger must be downloaded separately. Speech recognition is provided by your chosen external app, not bundled here.

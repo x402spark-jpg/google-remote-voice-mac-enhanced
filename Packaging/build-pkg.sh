@@ -4,14 +4,14 @@
 # it does NOT install or modify anything on the build machine.
 #
 #   ./Packaging/build-pkg.sh
-#   PKG_VERSION=1.0.1 PKG_IDENTIFIER=com.example.grv ./Packaging/build-pkg.sh
+#   PKG_VERSION=1.0.2 PKG_IDENTIFIER=com.example.grv ./Packaging/build-pkg.sh
 #
 # Output: build/GoogleRemoteVoice-Enhanced-<version>.pkg
 # Note: the app is ad-hoc signed (unnotarized). End users open it via right-click > Open.
 set -e
 cd "$(dirname "$0")/.."
 
-VERSION="${PKG_VERSION:-1.0.1}"
+VERSION="${PKG_VERSION:-1.0.2}"
 IDENTIFIER="${PKG_IDENTIFIER:-com.googleremotevoice.enhanced}"
 mkdir -p build
 

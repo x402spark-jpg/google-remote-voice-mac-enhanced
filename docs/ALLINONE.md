@@ -18,7 +18,7 @@
    - 下载 **Additional Tools for Xcode 正式版**（不带 beta；已实测 27.2，2026-10-29 发布），打开 DMG，把 `Hardware/PacketLogger.app` 拖进「应用程序」。
    - 或在 App 里点「选择工具…」指向 PacketLogger。
 4. **设输入法**：见 [豆包配置](DOUBAO.md)。麦克风选 `Remote Buddy Mic`，语音快捷键与 App 的「语音键」一致。
-5. **开按键接收**：App 里点「开启按键接收」→ 输管理员密码。先勾「按键检测模式」把 14 键各按一遍，核对计数到 14/14，再**取消勾选**启用映射。
+5. **开按键接收**：设备和权限就绪后默认自动开启（也可在 App 里手动点「开启按键接收」）→ 输管理员密码。想逐键核对时先勾「按键检测模式」把 14 键各按一遍，核对计数到 14/14，再**取消勾选**启用映射。
 
 ## 使用
 
@@ -30,6 +30,7 @@
 - **豆包不出字**：确认麦克风选了 `Remote Buddy Mic`（默认是笔记本麦克风）；快捷键两边一致；按住 >1.5 秒。
 - **快捷键不触发**：豆包只认真实修饰键 keyDown 序列，本增强版已处理；用「录制」设组合键，不要只设单键挂 flags。
 - **14 键 0/14**：PacketLogger 未装或未被识别；接收需管理员授权；同时只连一支同款遥控器。
+- **语音正常、普通键只登记不执行**：升级到 **1.0.2**（修复遥控器省电断连刷新后独占状态丢失）；仍异常时退出 App 重开，或重开一次按键接收。
 - **虚拟声卡未就绪**：驱动未加载，重启 CoreAudio（`sudo killall coreaudiod`）或重启电脑。
 - 配置：`~/Library/Application Support/GoogleRemoteVoice/config.json`；日志：`~/Library/Logs/GoogleRemoteVoice/engine.log`。
 
