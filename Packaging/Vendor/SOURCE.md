@@ -21,7 +21,8 @@
 
 ## 获取对应源码
 
-1. 首选：从上游 https://github.com/zfdang/remote-buddy 的对应 Release 下载完整源码（含 BlackHole 子模块与补丁）。
-2. 书面要约：自本发行版起三年内，任何收到本对象代码的人，均可通过本项目 GitHub Issues 联系维护者，以不超过合理复制成本的价格获取上述完整对应源码（含 BlackHole v0.7.2 修订 561d934 与 device-usb.patch）。
+1. **已随本仓库提供**：`Packaging/Vendor/blackhole-src/`（BlackHole v0.7.2 修订 561d934 源码快照）+ `Packaging/Vendor/device-usb.patch`（USB-transport 补丁）。重建步骤见 `Packaging/Vendor/README.md`。
+2. 上游完整工程：https://github.com/zfdang/remote-buddy （含品牌/标识配置）与 https://github.com/ExistentialAudio/BlackHole 。
+3. 书面要约：自本发行版起三年内，任何收到本对象代码的人，均可通过本项目 GitHub Issues 联系维护者，以不超过合理复制成本的价格获取上述完整对应源码。
 
 本驱动未做超出上述补丁与品牌/标识之外的修改。BlackHole 官方编译二进制版权归 Existential Audio Inc.；此处捆绑的是 GPL 源码派生构建，遵循 GPL-3.0-only。
